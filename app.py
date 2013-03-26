@@ -105,6 +105,45 @@ def get_data():
 @app.route('/debug', methods=['POST', 'GET'])
 def debug():
     if request.method == 'POST':
+        form = request.form
+        print ">>>>>>>>>>>>"
+        print dict(request.form)
+        print app.meta_sheet
+        print ">>>>>>>>>>>>"
+
+        key = '000'
+        if form['machine'] in app.meta_sheet:
+            key = app.meta_sheet[form['machine']]['spreadsheet-key']
+        else:
+            return jsonify(error='true')
+
+        client = gdata.spreadsheet.text_db.DatabaseClient(username=app.config['GDOCS_USERNAME'], password=app.config['GDOCS_PASSWORD'])
+        db_list = client.GetDatabases(spreadsheet_key=key)
+        database = db_list[0]
+
+        sheet_date = str(datetime.datetime.now()).split(" ")[0]
+
+        table = database.GetTables(name=sheet_date)
+
+        print
+        if table:
+            table = table[0]
+        else:
+            fields = ['time', 'load', 'used-ram', 'free-ram', 'cpu', 'raw', 'machine', 'free-ram-number']
+            table = database.CreateTable(sheet_date, fields)
+
+        app.current_table = table
+        data = dict( raw = str(form['raw']),
+                    cpu = form['cpu'],
+                    load = form['load'])
+
+        data['free-ram'] =  str(form['free_ram']).encode('utf8')
+        data['used-ram'] = str(form['used_ram']).encode('utf8')
+        data['time']     = str(form['time']).encode('utf8')
+
+        record = app.current_table.AddRecord(data)
+
+        record.Push()
         return jsonify(request.form)
     else:
         return jsonify(request.args)
