@@ -35,9 +35,23 @@ def jsonp(func):
 ##################
 ## app function ##
 ##################
+def update_metadata(app):
+    worksheet = app.spreadsheet_api.get_worksheet(app.config['GDOCS_KEYS_OF_METASHEET'] , 'od6')
+
+    meta_sheet = dict()
+    for r in worksheet.get_rows():
+        meta_sheet[r['machine']] = r
+
+    app.meta_sheet = meta_sheet
+
+
 def create_app(config_object):
     app = Flask(__name__)
     app.config.from_object(config_object)
+    app.spreadsheet_api = SpreadsheetAPI(app.config['GDOCS_USERNAME'], app.config['GDOCS_PASSWORD'], 'http://localhost')
+
+    update_metadata(app)
+
     return {'app': app}
 
 
