@@ -7,6 +7,10 @@ This file creates your application.
 """
 
 import os
+import gdata.spreadsheet.text_db
+import gdata.spreadsheet.service
+import datetime
+
 from flask import Flask, render_template, request, jsonify, current_app
 from functools import wraps
 from google_spreadsheet.api import SpreadsheetAPI
@@ -69,7 +73,9 @@ app = appInstance['app']
 ########################
 @app.before_first_request
 def nat():
-    app.spreadsheet_api = SpreadsheetAPI(app.config['GDOCS_USERNAME'], app.config['GDOCS_PASSWORD'], 'http://localhost')
+    # update_metadata(app)
+    pass
+    # app.spreadsheet_api = SpreadsheetAPI(app.config['GDOCS_USERNAME'], app.config['GDOCS_PASSWORD'], 'http://localhost')
 
 
 @app.before_request
@@ -101,6 +107,16 @@ def get_data():
 
     return jsonify(output)
 
+@app.route('/update', methods=['POST', 'GET'])
+@jsonp
+def update():
+    update_metadata(app)
+    return jsonify(app.meta_sheet)
+
+
+@app.before_request
+def before_request():
+    pass
 
 @app.route('/debug', methods=['POST', 'GET'])
 def debug():
@@ -126,27 +142,32 @@ def debug():
         table = database.GetTables(name=sheet_date)
 
         print
+        print
+        print
         if table:
             table = table[0]
         else:
-            fields = ['time', 'load', 'used-ram', 'free-ram', 'cpu', 'raw', 'machine', 'free-ram-number']
+            # fields = ['time', 'load', 'used-ram', 'free-ram', 'cpu', 'raw', 'machine', 'free-ram-number']
+            fields = form.keys()
             table = database.CreateTable(sheet_date, fields)
 
         app.current_table = table
-        data = dict( raw = str(form['raw']),
-                    cpu = form['cpu'],
-                    load = form['load'])
+        # data = dict( raw = str(form['raw']),
+        #             cpu = form['cpu'],
+        #             load = form['load'])
 
-        data['free-ram'] =  str(form['free_ram']).encode('utf8')
-        data['used-ram'] = str(form['used_ram']).encode('utf8')
-        data['time']     = str(form['time']).encode('utf8')
+        # data['free-ram'] =  str(form['free_ram']).encode('utf8')
+        # data['used-ram'] = str(form['used_ram']).encode('utf8')
+        # data['time']     = str(form['time']).encode('utf8')
 
-        record = app.current_table.AddRecord(data)
+        record = app.current_table.AddRecord(form)
 
+        print(form)
         record.Push()
-        return jsonify(request.form)
+        return jsonify(form)
     else:
         return jsonify(request.args)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
