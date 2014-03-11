@@ -85,7 +85,16 @@ def nat():
 
 @app.before_request
 def before_request():
-    app.spreadsheet_key = request.args.get('spreadsheet_key', app.config['GDOCS_FALLBACK_SHEET_KEY'])
+    app.spreadsheet_key = request.args.get('spreadsheet_key', 'error')
+
+    print "======== DEBUG ========"
+    print app.spreadsheet_key
+    print "/======= DEBUG ========"
+
+    if not app.spreadsheet_key:
+        print app.spreadsheet_key
+        return jsonify({error: 'no spreadsheet_key'})
+
     app.worksheet_key   = request.args.get('worksheet_key', 'od6')
 
 
@@ -136,7 +145,7 @@ def endpoint():
         if form['machine'] in app.meta_sheet:
             key = app.meta_sheet[form['machine']]['spreadsheet-key']
         else:
-            return jsonify(error='true')
+            return jsonify(error='invalid machine')
 
         client = gdata.spreadsheet.text_db.DatabaseClient(
             username=app.config['GDOCS_USERNAME'], 
