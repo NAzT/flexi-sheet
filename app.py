@@ -149,22 +149,14 @@ def endpoint():
         table      = database.GetTables(name=sheet_date)
 
         if table:
-            table = table[0]
+            table  = table[0]
         else:
-            # fields = ['time', 'load', 'used-ram', 'free-ram', 'cpu', 'raw', 'machine', 'free-ram-number']
             fields = form.keys()
             table  = database.CreateTable(sheet_date, fields)
 
         app.current_table = table
-        # data = dict( raw = str(form['raw']),
-        #             cpu = form['cpu'],
-        #             load = form['load'])
+        record            = app.current_table.AddRecord(form)
 
-        # data['free-ram'] =  str(form['free_ram']).encode('utf8')
-        # data['used-ram'] = str(form['used_ram']).encode('utf8')
-        # data['time']     = str(form['time']).encode('utf8')
-
-        record = app.current_table.AddRecord(form)
         record.Push()
 
         return jsonify(form)
