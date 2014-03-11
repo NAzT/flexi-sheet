@@ -85,16 +85,7 @@ def nat():
 
 @app.before_request
 def before_request():
-    app.spreadsheet_key = request.args.get('spreadsheet_key', 'error')
-
-    print "======== DEBUG ========"
-    print app.spreadsheet_key
-    print "/======= DEBUG ========"
-
-    if not app.spreadsheet_key:
-        print app.spreadsheet_key
-        return jsonify({error: 'no spreadsheet_key'})
-
+    app.spreadsheet_key = request.args.get('spreadsheet_key')
     app.worksheet_key   = request.args.get('worksheet_key', 'od6')
 
 
@@ -157,6 +148,7 @@ def endpoint():
         sheet_date = str(datetime.datetime.now()).split(" ")[0]
         table      = database.GetTables(name=sheet_date)
 
+        # use existing sheet that's the same day
         if table:
             table  = table[0]
         else:
@@ -170,7 +162,7 @@ def endpoint():
 
         return jsonify(form)
     else:
-        return jsonify(request.args)
+        return jsonify(dict(error='invalid method', args=request.args))
 
 
 if __name__ == '__main__':
