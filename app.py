@@ -51,7 +51,7 @@ def update_metadata(app):
 
 def create_app(config_object):
     app = Flask(__name__)
-    
+
     app.config.from_object(config_object)
     app.spreadsheet_api = SpreadsheetAPI(
         app.config['GDOCS_USERNAME'], 
@@ -96,7 +96,7 @@ def before_request():
 @app.route('/')
 def home():
     """Render website's home page."""
-    return render_template('home.html')
+    return render_template('home.html', version=app.config['APP_VERSION'])
 
 
 @app.route('/sheets')
