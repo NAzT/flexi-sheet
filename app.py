@@ -40,9 +40,9 @@ def jsonp(func):
 ## app function ##
 ##################
 def update_metadata(app):
-    worksheet = app.spreadsheet_api.get_worksheet(app.config['GDOCS_KEYS_OF_METASHEET'] , 'od6')
-
+    worksheet  = app.spreadsheet_api.get_worksheet(app.config['GDOCS_KEYS_OF_METASHEET'] , 'od6')
     meta_sheet = dict()
+
     for r in worksheet.get_rows():
         meta_sheet[r['machine']] = r
 
@@ -51,8 +51,13 @@ def update_metadata(app):
 
 def create_app(config_object):
     app = Flask(__name__)
+    
     app.config.from_object(config_object)
-    app.spreadsheet_api = SpreadsheetAPI(app.config['GDOCS_USERNAME'], app.config['GDOCS_PASSWORD'], 'http://localhost')
+    app.spreadsheet_api = SpreadsheetAPI(
+        app.config['GDOCS_USERNAME'], 
+        app.config['GDOCS_PASSWORD'],
+        'http://localhost'
+    )
 
     update_metadata(app)
 
@@ -81,7 +86,7 @@ def nat():
 @app.before_request
 def before_request():
     app.spreadsheet_key = request.args.get('spreadsheet_key', app.config['GDOCS_FALLBACK_SHEET_KEY'])
-    app.worksheet_key = request.args.get('worksheet_key', 'od6')
+    app.worksheet_key   = request.args.get('worksheet_key', 'od6')
 
 
 ##################################
@@ -97,13 +102,11 @@ def home():
 @app.route('/sheets')
 @jsonp
 def get_data():
-    api = app.spreadsheet_api
-
-    worksheet = api.get_worksheet(app.spreadsheet_key, app.worksheet_key)
+    api        = app.spreadsheet_api
+    worksheet  = api.get_worksheet(app.spreadsheet_key, app.worksheet_key)
     worksheets = [sheet[1] for sheet in api.list_worksheets(app.spreadsheet_key)]
-
-    rows = worksheet.get_rows()
-    output = dict(data=rows, meta=request.args, worksheets=worksheets)
+    rows       = worksheet.get_rows()
+    output     = dict(data=rows, meta=request.args, worksheets=worksheets)
 
     return jsonify(output)
 
@@ -118,38 +121,39 @@ def update():
 def before_request():
     pass
 
-@app.route('/debug', methods=['POST', 'GET'])
-def debug():
+@app.route('/endpoint', methods=['POST', 'GET'])
+def endpoint():
     if request.method == 'POST':
         form = request.form
-        print ">>>>>>>>>>>>"
-        print dict(request.form)
-        print app.meta_sheet
-        print ">>>>>>>>>>>>"
+        if app.config['DEBUG']:
+            print "======== DEBUG ========"
+            print dict(request.form)
+            print app.meta_sheet
+            print "/======= DEBUG ========"
 
-        key = '000'
+        key = ''
+
         if form['machine'] in app.meta_sheet:
             key = app.meta_sheet[form['machine']]['spreadsheet-key']
         else:
             return jsonify(error='true')
 
-        client = gdata.spreadsheet.text_db.DatabaseClient(username=app.config['GDOCS_USERNAME'], password=app.config['GDOCS_PASSWORD'])
-        db_list = client.GetDatabases(spreadsheet_key=key)
-        database = db_list[0]
+        client = gdata.spreadsheet.text_db.DatabaseClient(
+            username=app.config['GDOCS_USERNAME'], 
+            password=app.config['GDOCS_PASSWORD']
+        )
 
+        db_list    = client.GetDatabases(spreadsheet_key=key)
+        database   = db_list[0]
         sheet_date = str(datetime.datetime.now()).split(" ")[0]
+        table      = database.GetTables(name=sheet_date)
 
-        table = database.GetTables(name=sheet_date)
-
-        print
-        print
-        print
         if table:
             table = table[0]
         else:
             # fields = ['time', 'load', 'used-ram', 'free-ram', 'cpu', 'raw', 'machine', 'free-ram-number']
             fields = form.keys()
-            table = database.CreateTable(sheet_date, fields)
+            table  = database.CreateTable(sheet_date, fields)
 
         app.current_table = table
         # data = dict( raw = str(form['raw']),
@@ -161,9 +165,8 @@ def debug():
         # data['time']     = str(form['time']).encode('utf8')
 
         record = app.current_table.AddRecord(form)
-
-        print(form)
         record.Push()
+
         return jsonify(form)
     else:
         return jsonify(request.args)
