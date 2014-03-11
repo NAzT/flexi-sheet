@@ -40,7 +40,7 @@ def jsonp(func):
 ## app function ##
 ##################
 def update_metadata(app):
-    worksheet  = app.spreadsheet_api.get_worksheet(app.config['GDOCS_KEYS_OF_METASHEET'] , 'od6')
+    worksheet  = app.spreadsheet_api.get_worksheet(app.config['GDOCS_META_SHEET'] , 'od6')
     meta_sheet = dict()
 
     for r in worksheet.get_rows():
